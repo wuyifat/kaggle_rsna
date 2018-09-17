@@ -11,6 +11,12 @@ from imgaug import augmenters as iaa
 from tqdm import tqdm
 import pandas as pd 
 import glob 
+import argparse
+
+parser = argparse.ArgumentParser(description='Mask-RCNN for Pneumonia')
+parser.add_argument('--epochs', default=30, type=int)
+parser.add_argument('--submission', default='submission', type=str, help='Name of the submission file')
+
 
 DATA_DIR = os.path.abspath('./data')
 
@@ -18,7 +24,7 @@ DATA_DIR = os.path.abspath('./data')
 ROOT_DIR = os.path.abspath('.')
 MODEL_DIR = os.path.abspath('./ckpts')
 
-os.chdir('Mask_RCNN')
+# os.chdir('Mask_RCNN')
 # Import Mask RCNN
 sys.path.append(os.path.join(ROOT_DIR, 'Mask_RCNN'))  # To find local version of the library
 from mrcnn.config import Config
@@ -28,6 +34,8 @@ from mrcnn import visualize
 from mrcnn.model import log
 
 from models import *
+
+args = parser.parse_args()
 
 train_dicom_dir = os.path.join(DATA_DIR, 'stage_1_train_images')
 test_dicom_dir = os.path.join(DATA_DIR, 'stage_1_test_images')
@@ -141,7 +149,7 @@ augmentation = iaa.SomeOf((0, 2), [
     iaa.Multiply((0.9, 1.1))
 ])
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = args.epochs
 
 # Train Mask-RCNN Model 
 import warnings 
@@ -181,6 +189,8 @@ for d in dir_names:
 model_path = sorted(fps)[-1]
 print('Found model {}'.format(model_path))
 
+input()
+
 inference_config = InferenceConfig()
 
 # Recreate the model in inference mode
@@ -193,5 +203,5 @@ print("Loading weights from ", model_path)
 model.load_weights(model_path, by_name=True)
 
 test_image_fps = get_dicom_fps(test_dicom_dir)
-submission_fp = os.path.join(ROOT_DIR, 'submission.csv')
+submission_fp = os.path.join(ROOT_DIR, '{}.csv'.format(args.submission))
 predict(test_image_fps, filepath=submission_fp)
